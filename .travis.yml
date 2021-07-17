@@ -4,7 +4,6 @@ dart:
 
 dart_task:
   - test: --platform vm
-  - dartfmt: true
 
 branches:
   only:
