@@ -46,7 +46,7 @@ Future<HttpServer> runPubServer(String baseDir, String host, int port, bool stan
   var server = ShelfPubServer(cow);
   print(
     '''Listening on http://$host:$port\n
-To make the pub client use this repository configure your shell via:\n'
+To make the pub client use this repository configure your shell via
     \$ export PUB_HOSTED_URL=http://$host:$port\n''',
   );
 
