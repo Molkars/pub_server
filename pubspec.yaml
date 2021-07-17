@@ -1,6 +1,7 @@
 name: pub_server
 version: 0.1.6-dev
-author: Dart Team <misc@dartlang.org>
+authors:
+  - Dart Team <misc@dartlang.org>
 description: Re-usable components for creating a custom Dart package server.
 homepage: https://github.com/dart-lang/pub_server
 

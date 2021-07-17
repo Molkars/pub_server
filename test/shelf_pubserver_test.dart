@@ -54,8 +54,8 @@ class RepositoryMock implements PackageRepository {
     throw 'finishAsyncUpload';
   }
 
-  Future<PackageVersion> lookupVersion(String package, String version) async {
-    if (lookupVersionFun != null) return lookupVersionFun!(package, version)!;
+  Future<PackageVersion?> lookupVersion(String package, String version) async {
+    if (lookupVersionFun != null) return lookupVersionFun!(package, version);
     throw 'lookupVersion';
   }
 
@@ -100,8 +100,8 @@ class PackageCacheMock implements PackageCache {
 
   PackageCacheMock({this.getFun, this.setFun, this.invalidateFun});
 
-  Future<List<int>> getPackageData(String package) async {
-    if (getFun != null) return getFun!(package)!;
+  Future<List<int>?> getPackageData(String package) async {
+    if (getFun != null) return getFun!(package);
     throw 'no get function';
   }
 
@@ -166,9 +166,9 @@ void main() {
 
     group('/api/packages/<package>', () {
       var expectedVersionJson = {
+        'archive_url': '${getUri('/packages/analyzer/versions/0.1.0.tar.gz')}',
         'pubspec': {'foo': 1},
         'version': '0.1.0',
-        'archive_url': '${getUri('/packages/analyzer/versions/0.1.0.tar.gz')}',
       };
       var expectedJson = {
         'name': 'analyzer',
@@ -226,13 +226,16 @@ void main() {
           var analyzer = PackageVersion('analyzer', '0.1.0', pubspec);
           return Stream.fromIterable([analyzer]);
         });
-        var cacheMock = PackageCacheMock(getFun: expectAsync1((String pkg) {
-          expect(pkg, equals('analyzer'));
-          return null;
-        }), setFun: expectAsync2((String package, List<int> data) {
-          expect(package, equals('analyzer'));
-          expect(convert.json.decode(convert.utf8.decode(data)), equals(expectedJson));
-        }));
+        var cacheMock = PackageCacheMock(
+          getFun: expectAsync1((String pkg) {
+            expect(pkg, equals('analyzer'));
+            return null;
+          }),
+          setFun: expectAsync2((String package, List<int> data) {
+            expect(package, equals('analyzer'));
+            expect(convert.json.decode(convert.utf8.decode(data)), equals(expectedJson));
+          }),
+        );
         var server = ShelfPubServer(mock, cache: cacheMock);
         var request = getRequest('/api/packages/analyzer');
         var response = await server.requestHandler(request);

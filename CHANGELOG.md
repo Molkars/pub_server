@@ -1,3 +1,8 @@
+# 0.2.0
+
+* Require dart 2.13
+* Migrate to null-safety
+
 ## 0.1.6
 
 * Require at least Dart 2.2

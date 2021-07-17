@@ -44,16 +44,15 @@ Future<HttpServer> runPubServer(String baseDir, String host, int port, bool stan
   var cow = CopyAndWriteRepository(local, remote, standalone);
 
   var server = ShelfPubServer(cow);
+
   print(
     '''Listening on http://$host:$port\n
 To make the pub client use this repository configure your shell via
-    \$ export PUB_HOSTED_URL=http://$host:$port\n''',
+  \$ export PUB_HOSTED_URL=http://$host:$port''',
   );
 
   return shelf_io.serve(
-    const Pipeline()
-        .addMiddleware(logRequests())
-        .addHandler(server.requestHandler),
+    const Pipeline().addMiddleware(logRequests()).addHandler(server.requestHandler),
     host,
     port,
   );
