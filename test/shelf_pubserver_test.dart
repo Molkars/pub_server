@@ -13,55 +13,54 @@ import 'package:shelf/shelf.dart' as shelf;
 import 'package:test/test.dart';
 
 class RepositoryMock implements PackageRepository {
-  final ZoneBinaryCallback<Stream<List<int>>, String, String> downloadFun;
-  final ZoneBinaryCallback<Uri, String, String> downloadUrlFun;
-  final ZoneUnaryCallback<PackageVersion, Uri> finishAsyncUploadFun;
-  final ZoneBinaryCallback<PackageVersion, String, String> lookupVersionFun;
-  final ZoneUnaryCallback<Future<AsyncUploadInfo>, Uri> startAsyncUploadFun;
-  final ZoneUnaryCallback<Future<PackageVersion>, Stream<List<int>>> uploadFun;
-  final ZoneUnaryCallback<Stream<PackageVersion>, String> versionsFun;
-  final ZoneBinaryCallback<Future, String, String> addUploaderFun;
-  final ZoneBinaryCallback<Future, String, String> removeUploaderFun;
+  final ZoneBinaryCallback<Stream<List<int>>, String, String>? downloadFun;
+  final ZoneBinaryCallback<Uri, String, String>? downloadUrlFun;
+  final ZoneUnaryCallback<PackageVersion, Uri>? finishAsyncUploadFun;
+  final ZoneBinaryCallback<PackageVersion?, String, String>? lookupVersionFun;
+  final ZoneUnaryCallback<Future<AsyncUploadInfo>, Uri>? startAsyncUploadFun;
+  final ZoneUnaryCallback<Future<PackageVersion>, Stream<List<int>>>? uploadFun;
+  final ZoneUnaryCallback<Stream<PackageVersion>, String>? versionsFun;
+  final ZoneBinaryCallback<Future, String, String>? addUploaderFun;
+  final ZoneBinaryCallback<Future, String, String>? removeUploaderFun;
 
-  RepositoryMock(
-      {this.downloadFun,
-      this.downloadUrlFun,
-      this.finishAsyncUploadFun,
-      this.lookupVersionFun,
-      this.startAsyncUploadFun,
-      this.uploadFun,
-      this.versionsFun,
-      this.supportsAsyncUpload = false,
-      this.supportsDownloadUrl = false,
-      this.supportsUpload = false,
-      this.addUploaderFun,
-      this.removeUploaderFun,
-      this.supportsUploaders = false});
+  RepositoryMock({
+    this.downloadFun,
+    this.downloadUrlFun,
+    this.finishAsyncUploadFun,
+    this.lookupVersionFun,
+    this.startAsyncUploadFun,
+    this.uploadFun,
+    this.versionsFun,
+    this.supportsAsyncUpload = false,
+    this.supportsDownloadUrl = false,
+    this.supportsUpload = false,
+    this.addUploaderFun,
+    this.removeUploaderFun,
+    this.supportsUploaders = false,
+  });
 
   Future<Stream<List<int>>> download(String package, String version) async {
-    if (downloadFun != null) return downloadFun(package, version);
+    if (downloadFun != null) return downloadFun!(package, version);
     throw 'download';
   }
 
   Future<Uri> downloadUrl(String package, String version) async {
-    if (downloadUrlFun != null) return downloadUrlFun(package, version);
+    if (downloadUrlFun != null) return downloadUrlFun!(package, version);
     throw 'downloadUrl';
   }
 
   Future<PackageVersion> finishAsyncUpload(Uri uri) async {
-    if (finishAsyncUploadFun != null) return finishAsyncUploadFun(uri);
+    if (finishAsyncUploadFun != null) return finishAsyncUploadFun!(uri);
     throw 'finishAsyncUpload';
   }
 
   Future<PackageVersion> lookupVersion(String package, String version) async {
-    if (lookupVersionFun != null) return lookupVersionFun(package, version);
+    if (lookupVersionFun != null) return lookupVersionFun!(package, version)!;
     throw 'lookupVersion';
   }
 
   Future<AsyncUploadInfo> startAsyncUpload(Uri redirectUrl) async {
-    if (startAsyncUploadFun != null) {
-      return startAsyncUploadFun(redirectUrl);
-    }
+    if (startAsyncUploadFun != null) return startAsyncUploadFun!(redirectUrl);
     throw 'startAsyncUpload';
   }
 
@@ -74,52 +73,45 @@ class RepositoryMock implements PackageRepository {
   final bool supportsUploaders;
 
   Future<PackageVersion> upload(Stream<List<int>> data) {
-    if (uploadFun != null) return uploadFun(data);
+    if (uploadFun != null) return uploadFun!(data);
     throw 'upload';
   }
 
   Stream<PackageVersion> versions(String package) async* {
-    if (versionsFun == null) {
-      throw 'versions';
-    }
-
-    yield* versionsFun(package);
+    if (versionsFun == null) throw 'versions';
+    yield* versionsFun!(package);
   }
 
   Future addUploader(String package, String userEmail) {
-    if (addUploaderFun != null) {
-      return addUploaderFun(package, userEmail);
-    }
+    if (addUploaderFun != null) return addUploaderFun!(package, userEmail);
     throw 'addUploader';
   }
 
   Future removeUploader(String package, String userEmail) {
-    if (removeUploaderFun != null) {
-      return removeUploaderFun(package, userEmail);
-    }
+    if (removeUploaderFun != null) return removeUploaderFun!(package, userEmail);
     throw 'removeUploader';
   }
 }
 
 class PackageCacheMock implements PackageCache {
-  final ZoneUnaryCallback<List<int>, String> getFun;
-  final Function setFun;
-  final Function invalidateFun;
+  final ZoneUnaryCallback<List<int>?, String>? getFun;
+  final Function? setFun;
+  final Function? invalidateFun;
 
   PackageCacheMock({this.getFun, this.setFun, this.invalidateFun});
 
   Future<List<int>> getPackageData(String package) async {
-    if (getFun != null) return getFun(package);
+    if (getFun != null) return getFun!(package)!;
     throw 'no get function';
   }
 
   Future setPackageData(String package, List<int> data) async {
-    if (setFun != null) return setFun(package, data);
+    if (setFun != null) return setFun!(package, data);
     throw 'no set function';
   }
 
   Future invalidatePackageData(String package) async {
-    if (invalidateFun != null) return invalidateFun(package);
+    if (invalidateFun != null) return invalidateFun!(package);
     throw 'no invalidate function';
   }
 }
@@ -136,10 +128,8 @@ shelf.Request multipartRequest(Uri uri, List<int> bytes) {
   var boundary = 'testboundary';
 
   requestBytes.addAll(convert.ascii.encode('--$boundary\r\n'));
-  requestBytes.addAll(
-      convert.ascii.encode('Content-Type: application/octet-stream\r\n'));
-  requestBytes
-      .addAll(convert.ascii.encode('Content-Length: ${bytes.length}\r\n'));
+  requestBytes.addAll(convert.ascii.encode('Content-Type: application/octet-stream\r\n'));
+  requestBytes.addAll(convert.ascii.encode('Content-Length: ${bytes.length}\r\n'));
   requestBytes.addAll(convert.ascii.encode('Content-Disposition: '
       'form-data; name="file"; '
       'filename="package.tar.gz"\r\n\r\n'));
@@ -241,8 +231,7 @@ void main() {
           return null;
         }), setFun: expectAsync2((String package, List<int> data) {
           expect(package, equals('analyzer'));
-          expect(convert.json.decode(convert.utf8.decode(data)),
-              equals(expectedJson));
+          expect(convert.json.decode(convert.utf8.decode(data)), equals(expectedJson));
         }));
         var server = ShelfPubServer(mock, cache: cacheMock);
         var request = getRequest('/api/packages/analyzer');
@@ -274,13 +263,11 @@ void main() {
         var body = await response.readAsString();
 
         expect(response.statusCode, equals(400));
-        expect(convert.json.decode(body)['error']['message'],
-            'Version string "0.1.0+@" is not a valid semantic version.');
+        expect(convert.json.decode(body)['error']['message'], 'Version string "0.1.0+@" is not a valid semantic version.');
       });
 
       test('successful retrieval of version', () async {
-        var mock =
-            RepositoryMock(lookupVersionFun: (String package, String version) {
+        var mock = RepositoryMock(lookupVersionFun: (String package, String version) {
           // The pubspec is invalid, but that is irrelevant for this test.
           var pubspec = convert.json.encode({'foo': 1});
           return PackageVersion(package, version, pubspec);
@@ -293,8 +280,7 @@ void main() {
         var expectedJson = {
           'pubspec': {'foo': 1},
           'version': '0.1.0',
-          'archive_url':
-              '${getUri('/packages/analyzer/versions/0.1.0.tar.gz')}',
+          'archive_url': '${getUri('/packages/analyzer/versions/0.1.0.tar.gz')}',
         };
 
         expect(response.mimeType, equals('application/json'));
@@ -306,8 +292,7 @@ void main() {
     group('/packages/<package>/versions/<version>.tar.gz', () {
       group('download', () {
         test('successfull redirect', () async {
-          var mock =
-              RepositoryMock(downloadFun: (String package, String version) {
+          var mock = RepositoryMock(downloadFun: (String package, String version) {
             return Stream.fromIterable([
               [1, 2, 3]
             ]);
@@ -315,7 +300,7 @@ void main() {
           var server = ShelfPubServer(mock);
           var request = getRequest('/packages/analyzer/versions/0.1.0.tar.gz');
           var response = await server.requestHandler(request);
-          var body = await response.read().fold([], (b, d) => b..addAll(d));
+          var body = await response.read().fold<List<int>>([], (b, d) => b..addAll(d));
 
           expect(response.statusCode, equals(200));
           expect(body, equals([1, 2, 3]));
@@ -324,8 +309,7 @@ void main() {
 
       group('download url', () {
         test('successfull redirect', () async {
-          var expectedUrl =
-              Uri.parse('https://blobs.com/analyzer-0.1.0.tar.gz');
+          var expectedUrl = Uri.parse('https://blobs.com/analyzer-0.1.0.tar.gz');
           var mock = RepositoryMock(
               supportsDownloadUrl: true,
               downloadUrlFun: (String package, String version) {
@@ -362,10 +346,9 @@ void main() {
                 expect('$uri', equals('$finishUrl'));
                 return PackageVersion('foobar', '0.1.0', '');
               });
-          PackageCacheMock cacheMock;
+          PackageCacheMock? cacheMock;
           if (useMemcache) {
-            cacheMock =
-                PackageCacheMock(invalidateFun: expectAsync1((String package) {
+            cacheMock = PackageCacheMock(invalidateFun: expectAsync1((String package) {
               expect(package, equals('foobar'));
             }));
           }
@@ -413,15 +396,14 @@ void main() {
           var mock = RepositoryMock(
               supportsUpload: true,
               uploadFun: (Stream<List<int>> stream) {
-                return stream.fold([], (b, d) => b..addAll(d)).then((d) {
+                return stream.fold<List<int>>([], (b, d) => b..addAll(d)).then((d) {
                   expect(d, equals(tarballBytes));
                   return PackageVersion('foobar', '0.1.0', '');
                 });
               });
-          PackageCacheMock cacheMock;
+          PackageCacheMock? cacheMock;
           if (useMemcache) {
-            cacheMock =
-                PackageCacheMock(invalidateFun: expectAsync1((String package) {
+            cacheMock = PackageCacheMock(invalidateFun: expectAsync1((String package) {
               expect(package, equals('foobar'));
             }));
           }
@@ -462,8 +444,7 @@ void main() {
       test('sync failure', () async {
         var tarballBytes = const [1, 2, 3];
         var uploadUrl = getUri('/api/packages/versions/newUpload');
-        var finishUrl =
-            getUri('/api/packages/versions/newUploadFinish?error=abc');
+        var finishUrl = getUri('/api/packages/versions/newUploadFinish?error=abc');
         var mock = RepositoryMock(
             supportsUpload: true,
             uploadFun: (Stream<List<int>> stream) async {
@@ -518,12 +499,13 @@ void main() {
 
         test('success', () async {
           var mock = RepositoryMock(
-              supportsUploaders: true,
-              addUploaderFun: expectAsync2((package, user) {
-                expect(package, equals('pkg'));
-                expect(user, equals('hans'));
-                return null;
-              }));
+            supportsUploaders: true,
+            addUploaderFun: expectAsync2((package, user) async {
+              expect(package, equals('pkg'));
+              expect(user, equals('hans'));
+              return null;
+            }),
+          );
 
           var server = ShelfPubServer(mock);
           var request = shelf.Request('POST', url, body: formEncodedBody);
@@ -575,12 +557,13 @@ void main() {
 
         test('success', () async {
           var mock = RepositoryMock(
-              supportsUploaders: true,
-              removeUploaderFun: expectAsync2((package, user) {
-                expect(package, equals('pkg'));
-                expect(user, equals('hans'));
-                return null;
-              }));
+            supportsUploaders: true,
+            removeUploaderFun: expectAsync2((package, user) async {
+              expect(package, equals('pkg'));
+              expect(user, equals('hans'));
+              return null;
+            }),
+          );
 
           var server = ShelfPubServer(mock);
           var request = shelf.Request('DELETE', url);

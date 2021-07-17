@@ -11,11 +11,11 @@ import 'package:pub_server/shelf_pubserver.dart';
 import 'package:shelf/shelf.dart';
 import 'package:shelf/shelf_io.dart' as shelf_io;
 
-import 'src/examples/cow_repository.dart';
-import 'src/examples/file_repository.dart';
-import 'src/examples/http_proxy_repository.dart';
+import './src/cow_repository.dart';
+import './src/file_repository.dart';
+import './src/http_proxy_repository.dart';
 
-final Uri pubDartLangOrg = Uri.parse('https://pub.dartlang.org');
+final Uri pubDartLangOrg = Uri.parse('https://pub.dev');
 
 void main(List<String> args) {
   var parser = argsParser();
@@ -36,8 +36,7 @@ void main(List<String> args) {
   runPubServer(directory, host, port, standalone);
 }
 
-Future<HttpServer> runPubServer(
-    String baseDir, String host, int port, bool standalone) {
+Future<HttpServer> runPubServer(String baseDir, String host, int port, bool standalone) {
   var client = http.Client();
 
   var local = FileRepository(baseDir);
@@ -45,26 +44,25 @@ Future<HttpServer> runPubServer(
   var cow = CopyAndWriteRepository(local, remote, standalone);
 
   var server = ShelfPubServer(cow);
-  print('Listening on http://$host:$port\n'
-      '\n'
-      'To make the pub client use this repository configure your shell via:\n'
-      '\n'
-      '    \$ export PUB_HOSTED_URL=http://$host:$port\n'
-      '\n');
+  print(
+    '''Listening on http://$host:$port\n
+To make the pub client use this repository configure your shell via:\n'
+    \$ export PUB_HOSTED_URL=http://$host:$port\n''',
+  );
 
   return shelf_io.serve(
-      const Pipeline()
-          .addMiddleware(logRequests())
-          .addHandler(server.requestHandler),
-      host,
-      port);
+    const Pipeline()
+        .addMiddleware(logRequests())
+        .addHandler(server.requestHandler),
+    host,
+    port,
+  );
 }
 
 ArgParser argsParser() {
   var parser = ArgParser();
 
-  parser.addOption('directory',
-      abbr: 'd', defaultsTo: 'pub_server-repository-data');
+  parser.addOption('directory', abbr: 'd', defaultsTo: 'pub_server-repository-data');
 
   parser.addOption('host', abbr: 'h', defaultsTo: 'localhost');
 

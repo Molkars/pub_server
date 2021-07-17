@@ -30,8 +30,7 @@ class CopyAndWriteRepository extends PackageRepository {
   /// Construct a new proxy with [local] as the local [PackageRepository] which
   /// is used for uploading new package versions to and [remote] as the
   /// read-only [PackageRepository] which is consulted on misses in [local].
-  CopyAndWriteRepository(
-      PackageRepository local, PackageRepository remote, bool standalone)
+  CopyAndWriteRepository(PackageRepository local, PackageRepository remote, bool standalone)
       : local = local,
         remote = remote,
         standalone = standalone,
@@ -40,17 +39,19 @@ class CopyAndWriteRepository extends PackageRepository {
 
   @override
   Stream<PackageVersion> versions(String package) {
-    StreamController<PackageVersion> controller;
+    late StreamController<PackageVersion> controller;
+
     void onListen() {
-      var waitList = [_localCache.fetchVersionlist(package)];
-      if (standalone != true) {
-        waitList.add(_remoteCache.fetchVersionlist(package));
-      }
+      var waitList = [
+        _localCache.fetchVersionlist(package),
+        if (!standalone) _remoteCache.fetchVersionlist(package),
+      ];
+
       Future.wait(waitList).then((tuple) {
-        var versions = <PackageVersion>{}..addAll(tuple[0]);
-        if (standalone != true) {
-          versions.addAll(tuple[1]);
-        }
+        var versions = <PackageVersion>{
+          ...tuple[0],
+          if (!standalone) ...tuple[1],
+        };
         for (var version in versions) {
           controller.add(version);
         }
@@ -58,19 +59,15 @@ class CopyAndWriteRepository extends PackageRepository {
       });
     }
 
-    controller = StreamController(onListen: onListen);
-    return controller.stream;
+    return (controller = StreamController(onListen: onListen)).stream;
   }
 
   @override
-  Future<PackageVersion> lookupVersion(String package, String version) {
+  Future<PackageVersion?> lookupVersion(String package, String version) {
     return versions(package)
         .where((pv) => pv.versionString == version)
         .toList()
-        .then((List<PackageVersion> versions) {
-      if (versions.isNotEmpty) return versions.first;
-      return null;
-    });
+        .then((List<PackageVersion> versions) => versions.isNotEmpty ? versions.first : null);
   }
 
   @override
@@ -103,8 +100,7 @@ class CopyAndWriteRepository extends PackageRepository {
     _logger.info('Starting upload to local package repository.');
     final pkgVersion = await local.upload(data);
     // TODO: It's not really necessary to invalidate all.
-    _logger.info(
-        'Upload finished - ${pkgVersion.packageName}@${pkgVersion.version}. '
+    _logger.info('Upload finished - ${pkgVersion.packageName}@${pkgVersion.version}. '
         'Invalidating in-memory cache.');
     _localCache.invalidateAll();
     return pkgVersion;
@@ -135,7 +131,7 @@ class _RemoteMetadataCache {
 
           _versions.putIfAbsent(package, () => <PackageVersion>{});
           remote.versions(package).toList().then((versions) {
-            _versions[package].addAll(versions);
+            _versions[package]!.addAll(versions);
             c.complete(_versions[package]);
           });
 
@@ -146,9 +142,7 @@ class _RemoteMetadataCache {
   }
 
   void addVersion(String package, PackageVersion version) {
-    _versions
-        .putIfAbsent(version.packageName, () => <PackageVersion>{})
-        .add(version);
+    _versions.putIfAbsent(version.packageName, () => <PackageVersion>{}).add(version);
   }
 
   void invalidateAll() {

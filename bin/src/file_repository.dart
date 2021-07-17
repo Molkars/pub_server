@@ -21,31 +21,28 @@ class FileRepository extends PackageRepository {
   FileRepository(this.baseDir);
 
   @override
-  Stream<PackageVersion> versions(String package) {
+  Stream<PackageVersion> versions(String package) async* {
     var directory = Directory(p.join(baseDir, package));
     if (directory.existsSync()) {
-      return directory
-          .list(recursive: false)
-          .where((fse) => fse is Directory)
-          .map((dir) {
-        var version = p.basename(dir.path);
+      await for (final fse in directory.list(recursive: false)) {
+        if (fse is! Directory) {
+          continue;
+        }
+        var version = p.basename(fse.path);
         var pubspecFile = File(pubspecFilePath(package, version));
         var tarballFile = File(packageTarballPath(package, version));
         if (pubspecFile.existsSync() && tarballFile.existsSync()) {
           var pubspec = pubspecFile.readAsStringSync();
-          return PackageVersion(package, version, pubspec);
+          yield PackageVersion(package, version, pubspec);
         }
-        return null;
-      }).where((e) => e != null);
+      }
     }
-
-    return Stream.fromIterable([]);
   }
 
   // TODO: Could be optimized by searching for the exact package/version
   // combination instead of enumerating all.
   @override
-  Future<PackageVersion> lookupVersion(String package, String version) {
+  Future<PackageVersion?> lookupVersion(String package, String version) {
     return versions(package)
         .where((pv) => pv.versionString == version)
         .toList()
@@ -66,7 +63,7 @@ class FileRepository extends PackageRepository {
     var tarballBytes = bb.takeBytes();
     var tarBytes = GZipDecoder().decodeBytes(tarballBytes);
     var archive = TarDecoder().decodeBytes(tarBytes);
-    ArchiveFile pubspecArchiveFile;
+    ArchiveFile? pubspecArchiveFile;
     for (var file in archive.files) {
       if (file.name == 'pubspec.yaml') {
         pubspecArchiveFile = file;
