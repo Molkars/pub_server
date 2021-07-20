@@ -1,4 +1,4 @@
-# Custom Pub Server
+# Custom Dart Pub.dev Server
 
 ### CLI Options
 | **name** | **type** | **The description of the option** | **Default Value** | 
